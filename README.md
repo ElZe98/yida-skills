@@ -2,7 +2,7 @@
 
 > 宜搭（Yida）AI 技能合集 —— 让 AI 助手具备完整的宜搭平台开发能力
 
-一套专为 [钉钉宜搭](https://www.aliwork.com) 平台设计的 AI Skills，覆盖从登录、建应用、建表单、开发自定义页面到发布的完整研发链路。配合 **OpenCode** 或 **ClaudeCode** 使用，让 AI 真正能帮你端到端地完成宜搭应用开发。
+一套专为 [钉钉宜搭](https://www.aliwork.com) 平台设计的 AI Skills，覆盖从登录、建应用、建表单、开发自定义页面到发布的完整研发链路。配合 **OpenCode** 或 **ClaudeCode** 使用（支持龙虾🦞），让 AI 真正能帮你端到端地完成宜搭应用开发。
 
 ---
 
