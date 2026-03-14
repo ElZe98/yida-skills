@@ -125,6 +125,48 @@ def extract_info_from_cookies(cookies):
     return csrf_token, corp_id, user_id
 
 
+# ── 仅检查登录态（不触发登录）────────────────────────────
+
+
+def check_login_only():
+    """
+    仅检查登录态，不触发登录。
+
+    用于 AI Agent 判断是否需要登录。
+    Returns:
+        返回登录信息字典，包含 can_auto_use 字段供 AI 判断
+    """
+    saved_cookies, saved_base_url = load_login_cache()
+
+    if not saved_cookies:
+        return {
+            "status": "not_logged_in",
+            "can_auto_use": False,
+            "message": "本地无 Cookie 缓存，需要扫码登录",
+        }
+
+    csrf_token, corp_id, user_id = extract_info_from_cookies(saved_cookies)
+
+    if not csrf_token:
+        return {
+            "status": "not_logged_in",
+            "can_auto_use": False,
+            "message": "Cookie 中无 tianshu_csrf_token，需要重新登录",
+        }
+
+    base_url = saved_base_url or DEFAULT_BASE_URL
+    return {
+        "status": "ok",
+        "can_auto_use": True,
+        "csrf_token": csrf_token,
+        "corp_id": corp_id,
+        "user_id": user_id,
+        "base_url": base_url,
+        "cookies": saved_cookies,
+        "message": f"✅ 已有有效登录态，可直接使用\n  组织: {corp_id}\n  用户: {user_id}\n  域名: {base_url}",
+    }
+
+
 # ── 验证本地缓存的 Cookie ─────────────────────────────
 
 
@@ -271,6 +313,10 @@ def refresh_csrf_token():
 
 
 def main():
+    if "--check-only" in sys.argv:
+        result = check_login_only()
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
     # 支持 --refresh-csrf 模式：仅重新提取 csrf_token，不重新扫码登录
     if "--refresh-csrf" in sys.argv:
         print("=" * 50, file=sys.stderr)
