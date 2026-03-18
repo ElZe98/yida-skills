@@ -134,10 +134,13 @@ def ensure_login():
     return cookie_data
 
 
-def search_form_datas(base_url, cookies, csrf_token, app_type, form_uuid, options):
+def search_form_datas(base_url, cookies, csrf_token, app_type, form_uuid, options, max_retries=3):
     """
     调用 searchFormDatas 接口查询数据
-    URL格式: /dingtalk/web/{appType}/v1/form/searchFormDatas.json?_api=nattyFetch&_mock=false&...
+    URL 格式：/dingtalk/web/{appType}/v1/form/searchFormDatas.json?_api=nattyFetch&_mock=false&...
+    
+    参数:
+        max_retries: 最大重试次数（遇到 QPS 限流时）
     """
     params = {
         "_api": "nattyFetch",
@@ -170,24 +173,35 @@ def search_form_datas(base_url, cookies, csrf_token, app_type, form_uuid, option
     req = request.Request(url, headers=headers, method="GET")
     context = ssl.create_default_context()
     
-    try:
-        with request.urlopen(req, timeout=30, context=context) as response:
-            content = response.read().decode("utf-8")
-            return json.loads(content)
-    except error.HTTPError as e:
-        content = e.read().decode("utf-8")
+    # QPS 限流重试逻辑（宜搭 QPS 限制：40 次/秒）
+    for attempt in range(max_retries):
         try:
-            return json.loads(content)
-        except:
-            return {"success": False, "errorMsg": f"HTTP {e.code}: {content[:200]}"}
-    except Exception as e:
-        return {"success": False, "errorMsg": str(e)}
+            with request.urlopen(req, timeout=30, context=context) as response:
+                content = response.read().decode("utf-8")
+                return json.loads(content)
+        except error.HTTPError as e:
+            # 429 Too Many Requests - QPS 限流
+            if e.code == 429 and attempt < max_retries - 1:
+                time.sleep(1)  # 等待 1 秒后重试
+                continue
+            content = e.read().decode("utf-8")
+            try:
+                return json.loads(content)
+            except:
+                return {"success": False, "errorMsg": f"HTTP {e.code}: {content[:200]}"}
+        except Exception as e:
+            return {"success": False, "errorMsg": str(e)}
+    
+    return {"success": False, "errorMsg": "请求失败：超过最大重试次数"}
 
 
-def get_form_data_by_id(base_url, cookies, csrf_token, app_type, form_inst_id):
+def get_form_data_by_id(base_url, cookies, csrf_token, app_type, form_inst_id, max_retries=3):
     """
     调用 getFormDataById 接口查询单个实例详情
-    URL格式: /dingtalk/web/{appType}/v1/form/getFormDataById.json?...
+    URL 格式：/dingtalk/web/{appType}/v1/form/getFormDataById.json?...
+    
+    参数:
+        max_retries: 最大重试次数（遇到 QPS 限流时）
     """
     params = {
         "_api": "nattyFetch",
@@ -214,18 +228,24 @@ def get_form_data_by_id(base_url, cookies, csrf_token, app_type, form_inst_id):
     req = request.Request(url, headers=headers, method="GET")
     context = ssl.create_default_context()
     
-    try:
-        with request.urlopen(req, timeout=30, context=context) as response:
-            content = response.read().decode("utf-8")
-            return json.loads(content)
-    except error.HTTPError as e:
-        content = e.read().decode("utf-8")
+    # QPS 限流重试逻辑（宜搭 QPS 限制：40 次/秒）
+    for attempt in range(max_retries):
         try:
-            return json.loads(content)
-        except:
-            return {"success": False, "errorMsg": f"HTTP {e.code}: {content[:200]}"}
-    except Exception as e:
-        return {"success": False, "errorMsg": str(e)}
+            with request.urlopen(req, timeout=30, context=context) as response:
+                content = response.read().decode("utf-8")
+                return json.loads(content)
+        except error.HTTPError as e:
+            # 429 Too Many Requests - QPS 限流
+            if e.code == 429 and attempt < max_retries - 1:
+                time.sleep(1)  # 等待 1 秒后重试
+                continue
+            content = e.read().decode("utf-8")
+            try:
+                return json.loads(content)
+            except:
+                return {"success": False, "errorMsg": f"HTTP {e.code}: {content[:200]}"}
+        except Exception as e:
+            return {"success": False, "errorMsg": str(e)}
 
 
 def parse_args():

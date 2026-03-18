@@ -168,7 +168,15 @@ yida-query-data/
 1. **Cookie 位置**：脚本优先从 `openyida/.cache/cookies.json` 读取 Cookie
 2. **CSRF Token**：自动从 Cookie 的 `tianshu_csrf_token` 字段提取
 3. **时间戳**：每次请求自动生成当前时间的毫秒时间戳
-4. **错误处理**：
+4. **分页说明**：
+   - `totalCount`：符合条件的数据总条数
+   - `currentPage`：当前页码，从 1 开始
+   - `pageSize`：每页记录数，最大值为 100
+5. **QPS 限流说明**：
+   - 宜搭作为第三方企业应用，调用钉钉接口的 QPS 限制为 **40 次/秒**
+   - 建议在程序中控制请求频率，避免超过限制
+   - 如遇限流错误，可 `sleep 1 秒` 后重试
+6. **错误处理**：
    - `TIANSHU_000030`：csrf_token 过期，自动刷新
    - `307`/`302`：登录态过期，自动重新登录
 
